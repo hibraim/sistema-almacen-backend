@@ -3,12 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from .database import init_db
-from . import routers
+from app.routers import router as api_router
+from app.database import init_db
 
-app = FastAPI(title="Sistema SPM Almacén", version="3.2")
+app = FastAPI()
 
-# Configuración de permisos para que React se comunique sin bloqueos
+# Configuración de CORS para conectar con Vercel y celulares
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,14 +17,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Carpeta para guardar las fotos de los artículos
+# Carpeta para archivos estáticos
 os.makedirs("static/uploads", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Iniciar la base de datos al arrancar
+# Inicializar base de datos
 @app.on_event("startup")
 def startup_event():
     init_db()
 
-# ¡AQUÍ ESTÁ LA MAGIA! Conectamos todas las rutas de guardado, edición y eliminación
-app.include_router(routers.router, prefix="/api/v1")
+# Incluir rutas con el prefijo limpio
+app.include_router(api_router)
