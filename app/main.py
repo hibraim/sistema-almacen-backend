@@ -27,4 +27,4 @@ def startup_event():
     init_db()
 
 # ¡AQUÍ ESTÁ LA MAGIA! Conectamos todas las rutas de guardado, edición y eliminación
-app.include_router(routers.router)
+app.include_router(routers.router, prefix="/api/v1")
