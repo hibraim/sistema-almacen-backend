@@ -28,3 +28,7 @@ def startup_event():
 
 # Incluir rutas con el prefijo limpio
 app.include_router(api_router)
+
+@app.get("/health")
+def health_check():
+    return {"status": "OK", "message": "El servidor está activo"}
