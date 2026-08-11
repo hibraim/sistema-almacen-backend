@@ -374,3 +374,98 @@ def limpiar_kardex(db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- REPORTES PDF Y EXCEL ---
+@router.get("/reportes/excel")
+def descargar_excel(area: Optional[str] = None, db: Session = Depends(get_db)):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Inventario SPM"
+    
+    header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    
+    headers = ["Código", "Artículo", "Categoría", "Stock Actual", "Unidad", "Descripción"]
+    ws.append(headers)
+    
+    for col_num in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        
+    prods = db.query(Producto).all()
+    for p in prods:
+        cat = db.query(Categoria).filter(Categoria.id == p.categoria_id).first()
+        ws.append([
+            p.codigo_interno,
+            p.nombre,
+            cat.nombre if cat else "General",
+            p.stock_actual,
+            p.unidad_medida,
+            p.descripcion
+        ])
+        
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=reporte_inventario_spm.xlsx"}
+    )
+
+@router.get("/reportes/pdf")
+def descargar_pdf(area: Optional[str] = None, db: Session = Depends(get_db)):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#1F4E78'),
+        alignment=1,
+        spaceAfter=15
+    )
+    
+    elements.append(Paragraph("SISTEMA SPM - REPORTE GENERAL DE INVENTARIO", title_style))
+    elements.append(Spacer(1, 10))
+    
+    data = [["Código", "Artículo", "Categoría", "Stock Actual", "Unidad"]]
+    prods = db.query(Producto).all()
+    
+    for p in prods:
+        cat = db.query(Categoria).filter(Categoria.id == p.categoria_id).first()
+        data.append([
+            str(p.codigo_interno),
+            str(p.nombre),
+            str(cat.nombre if cat else "General"),
+            str(p.stock_actual),
+            str(p.unidad_medida)
+        ])
+        
+    t = Table(data, colWidths=[90, 250, 150, 90, 90])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4E78')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F9F9F9')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#DDDDDD'))
+    ]))
+    
+    elements.append(t)
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=reporte_inventario_spm.pdf"}
+    )
