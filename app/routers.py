@@ -169,9 +169,6 @@ def listar_productos(db: Session = Depends(get_db)):
     resultado = []
     for p in prods:
         cat = db.query(Categoria).filter(Categoria.id == p.categoria_id).first()
-        
-        # BORRA o comenta todo el bloque de 'entradas' y 'salidas' que calculaba la distribución de áreas aquí
-        
         resultado.append({
             "id": p.id,
             "codigo_interno": p.codigo_interno,
@@ -183,8 +180,7 @@ def listar_productos(db: Session = Depends(get_db)):
             "stock_minimo": p.stock_minimo,
             "stock_maximo": p.stock_maximo,
             "unidad_medida": p.unidad_medida,
-            "imagen_principal": p.imagen_principal,
-            # "distribucion_areas": distribucion  <-- QUITA ESTA LÍNEA
+            "imagen_principal": p.imagen_principal
         })
     return {"data": resultado}
 
