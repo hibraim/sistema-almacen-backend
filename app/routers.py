@@ -169,22 +169,9 @@ def listar_productos(db: Session = Depends(get_db)):
     resultado = []
     for p in prods:
         cat = db.query(Categoria).filter(Categoria.id == p.categoria_id).first()
-        distribucion = {}
         
-        entradas = db.query(Entrada).filter(Entrada.producto_id == p.id).all()
-        for e in entradas:
-            if e.area_id:
-                area_obj = db.query(Area).filter(Area.id == e.area_id).first()
-                if area_obj:
-                    distribucion[area_obj.nombre] = distribucion.get(area_obj.nombre, 0) + e.cantidad
-
-        salidas = db.query(Salida).filter(Salida.producto_id == p.id).all()
-        for s in salidas:
-            if s.area_id:
-                area_obj = db.query(Area).filter(Area.id == s.area_id).first()
-                if area_obj:
-                    distribucion[area_obj.nombre] = max(0, distribucion.get(area_obj.nombre, 0) - s.cantidad)
-
+        # BORRA o comenta todo el bloque de 'entradas' y 'salidas' que calculaba la distribución de áreas aquí
+        
         resultado.append({
             "id": p.id,
             "codigo_interno": p.codigo_interno,
@@ -197,7 +184,7 @@ def listar_productos(db: Session = Depends(get_db)):
             "stock_maximo": p.stock_maximo,
             "unidad_medida": p.unidad_medida,
             "imagen_principal": p.imagen_principal,
-            "distribucion_areas": distribucion
+            # "distribucion_areas": distribucion  <-- QUITA ESTA LÍNEA
         })
     return {"data": resultado}
 
