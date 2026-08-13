@@ -1,11 +1,12 @@
 from app.database import SessionLocal, init_db
-from app.models import Area, Categoria, Responsable
+from app.models import Area, Categoria
 
 def cargar_datos_iniciales():
     init_db()
     db = SessionLocal()
 
-    # 1. Áreas de ejemplo
+    # Opcional: Solo dejamos áreas base vacías o limpias si las necesitas para operar, 
+    # pero sin meter productos fantasma.
     if db.query(Area).count() == 0:
         areas = [
             Area(nombre="Alumbrado Público", descripcion="Mantenimiento de luminarias y red eléctrica"),
@@ -16,9 +17,7 @@ def cargar_datos_iniciales():
         ]
         db.add_all(areas)
         db.commit()
-        print("✅ Áreas creadas exitosamente.")
 
-    # 2. Categorías de ejemplo
     if db.query(Categoria).count() == 0:
         categorias = [
             Categoria(nombre="Material Eléctrico", descripcion="Cables, balastros, focos, fotoceldas"),
@@ -29,7 +28,6 @@ def cargar_datos_iniciales():
         ]
         db.add_all(categorias)
         db.commit()
-        print("✅ Categorías creadas exitosamente.")
 
     db.close()
 
